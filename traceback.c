@@ -263,6 +263,12 @@ _Py_DumpTracebackThreads(int fd,
     PyThreadState *tstate;
     unsigned int nthreads;
 
+    if(current_thread) {
+        /* Dump the traceback of current thread */
+        write_thread_id(fd, current_thread, 1);
+        dump_traceback(fd, current_thread, 0);
+    }
+
     /* Get the current interpreter from the current thread */
     tstate = PyInterpreterState_ThreadHead(interp);
     if (tstate == NULL)
@@ -279,8 +285,10 @@ _Py_DumpTracebackThreads(int fd,
             PUTS(fd, "...\n");
             break;
         }
-        write_thread_id(fd, tstate, tstate == current_thread);
-        dump_traceback(fd, tstate, 0);
+        if(tstate != current_thread) {
+            write_thread_id(fd, tstate, 0);
+            dump_traceback(fd, tstate, 0);
+        }
         tstate = PyThreadState_Next(tstate);
         nthreads++;
     } while (tstate != NULL);
